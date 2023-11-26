@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT License.
 
+using CustomerSupportServiceSample.Session;
+
 namespace CustomerSupportServiceSample.Services
 {
     public class SummaryService : ISummaryService
@@ -65,6 +67,8 @@ namespace CustomerSupportServiceSample.Services
                     recipient,
                     "Follow up on support conversation",
                     htmlContent);
+
+                ACSSession.SendEmail(recipient, htmlContent ?? "couldn't get email text");
                 return emailSendOperation.Value.Status.ToString();
             }
             catch (RequestFailedException ex)

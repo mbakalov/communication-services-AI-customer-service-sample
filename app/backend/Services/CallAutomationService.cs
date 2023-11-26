@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT License.
 
+using CustomerSupportServiceSample.Session;
+
 namespace CustomerSupportServiceSample.Services
 {
     public class CallAutomationService : ICallAutomationService
@@ -84,6 +86,8 @@ namespace CustomerSupportServiceSample.Services
 
         public async Task HandleEvent(CallConnected callConnected, string targetParticipant)
         {
+            ACSSession.StartBotVoiceChat();
+
             // Play a greeting and start listening for customer input
             var callMedia = GetCallConnection(callConnected.CallConnectionId).GetCallMedia();
             var recognizeOptions = GetMediaRecognizeSpeechOptions(Greeting, targetParticipant, callConnected.OperationContext!);
@@ -109,6 +113,8 @@ namespace CustomerSupportServiceSample.Services
             // 2. Detect if customer is asking for agent
             if (await DetectEscalateToAgentIntent(speech_result))
             {
+                ACSSession.StopBotVoiceChat("Agent escalation requested");
+
                 var goodbye = EndCallPhraseToConnectAgent;
                 var playOptions = GetPlaySpeechOptions(goodbye, targetParticipant);
                 await callMedia.PlayAsync(playOptions);
@@ -130,6 +136,8 @@ namespace CustomerSupportServiceSample.Services
             // 3. Detect if customer is ready to end call
             else if (await DetectEndCallIntent(speech_result))
             {
+                ACSSession.StopBotVoiceChat("Customer problem solved");
+
                 var goodbye = EndCall;
                 var playOptions = GetPlaySpeechOptions(goodbye, targetParticipant);
                 await callMedia.PlayAsync(playOptions);
@@ -142,7 +150,11 @@ namespace CustomerSupportServiceSample.Services
                 // Using the original chat thread ID that was stored to OperationContext
                 List<ChatHistory>? chatHistory = await GetFormattedChatHistory(threadId: recognizeCompleted.OperationContext!);
 
+                ACSSession.LogBotVoiceChatMessage("customer", speech_result);
+
                 var chatGPTResponse = await openAIService.AnswerAsync(speech_result, chatHistory);
+
+                ACSSession.LogBotVoiceChatMessage("bot", chatGPTResponse);
 
                 var recognizeOptions = GetMediaRecognizeSpeechOptions(
                     chatGPTResponse,

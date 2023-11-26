@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT License.
 
+using CustomerSupportServiceSample.Session;
+
 namespace CustomerSupportServiceSample.Controllers
 {
     [Route("api")]
@@ -50,6 +52,9 @@ namespace CustomerSupportServiceSample.Controllers
                 }
 
                 var data = eventConverter.Convert(eventGridEvent);
+
+                ACSSession.StartUserSession();
+
                 switch (data)
                 {
                     case null:

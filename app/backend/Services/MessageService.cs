@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT License.
 
+using CustomerSupportServiceSample.Session;
+
 namespace CustomerSupportServiceSample.Services
 {
     public class MessageService : IMessageService
@@ -33,6 +35,7 @@ namespace CustomerSupportServiceSample.Services
                 to: targetPhoneNumber, // E.164 formatted recipient phone number
                 message: smsMessage);
             logger.LogInformation("Sent SMS message, to={target}, message={message}", targetPhoneNumber, smsMessage);
+            ACSSession.SendSms(targetPhoneNumber, smsMessage);
             return resp;
         }
     }

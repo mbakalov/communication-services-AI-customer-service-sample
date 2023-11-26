@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT License.
 
+using CustomerSupportServiceSample.Session;
+
 namespace CustomerSupportServiceSample.Services
 {
     public class ChatService : IChatService
@@ -79,6 +81,8 @@ namespace CustomerSupportServiceSample.Services
             var eventThreadId = chatEvent.ThreadId;
             var eventSenderType = chatEvent.Metadata.GetValueOrDefault("SenderType");
 
+            ACSSession.StartBotChat();
+
             if (eventThreadId != cacheService.GetCache("ThreadId"))
             {
                 return; // only respond to active thread
@@ -127,10 +131,14 @@ namespace CustomerSupportServiceSample.Services
                 sendChatMessageOptions.Metadata.Add("SenderType", "bot");
                 await chatThreadClient.SendMessageAsync(sendChatMessageOptions);
                 await callAutomationService.CreateCallAsync(acsOutboundCallerId, phoneNumber, eventThreadId);
+
+                ACSSession.StopBotChat();
             }
             // 2. Respond with openAI generated response
             else
             {
+                ACSSession.LogBotChatMessage("customer", eventMessage);
+
                 var chatGptResponse = await openAIService.AnswerAsync(eventMessage, GetFormattedChatHistory(chatThreadClient));
                 var sendChatMessageOptions = new SendChatMessageOptions()
                 {
@@ -139,6 +147,8 @@ namespace CustomerSupportServiceSample.Services
                 };
                 sendChatMessageOptions.Metadata.Add("SenderType", "bot");
                 await chatThreadClient.SendMessageAsync(chatGptResponse, ChatMessageType.Text);
+
+                ACSSession.LogBotChatMessage("bot", chatGptResponse);
             }
         }
 
